@@ -1,6 +1,8 @@
-import { ParseBoolPipe,ParseIntPipe,ClassSerializerInterceptor, Body, Controller, Get, Param, Post, Req, Res,Query, UsePipes,ValidationPipe, UseInterceptors, HttpException, HttpStatus } from '@nestjs/common';
+import { UseGuards,ParseIntPipe,ClassSerializerInterceptor, Body, Controller, Get, Param, Post, Req, Res,Query, UsePipes,ValidationPipe, UseInterceptors, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { CreateUserDto } from 'src/users/dto/CreateUser.dto';
+import { AuthGuard } from 'src/users/guards/auth/auth.guard';
+import { ValidateCreateUserPipe } from 'src/users/pipe/validate-create-user/validate-create-user.pipe';
 import { UsersService } from 'src/users/services/users/users.service';
 import validateUserData from 'src/users/utils/CreateUserValidation';
 
@@ -11,6 +13,7 @@ export class UsersController {
 
     }
     @Get()
+    @UseGuards(AuthGuard)
     getUsers(){
         return this.userService.fetchUsers()
         
@@ -49,13 +52,13 @@ export class UsersController {
 
     @Post('create')
     @UseInterceptors(ClassSerializerInterceptor)
-    @UsePipes(ValidationPipe)
-    createUsers(@Body() userData:CreateUserDto){
+    @UsePipes(new ValidationPipe)
+    createUsers(@Body(ValidateCreateUserPipe) userData:CreateUserDto){
         const validationErrors = validateUserData(userData)
         if(validationErrors.length > 0){
             return {errors:validationErrors}
         }
-        console.log(userData);
+        console.log(userData.age.toPrecision());
         // const {username,email, age} = userData
         // const userResponse = new CreateUserDto(userData)
         const userResponse = this.userService.createUser(userData)
